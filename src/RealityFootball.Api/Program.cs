@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using RealityFootball.Api.Mcp;
 using RealityFootball.Api.Options;
 using RealityFootball.Api.Services;
 
@@ -12,6 +13,11 @@ builder.Services.AddSingleton<YahooTokenStore>();
 builder.Services.AddSingleton<YahooOAuthService>();
 builder.Services.AddSingleton<YahooFantasyClient>();
 
+builder.Services
+    .AddMcpServer()
+    .WithHttpTransport()
+    .WithTools<YahooFantasyTools>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -23,10 +29,21 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", () => Results.Ok(new
 {
-    message = "RealityFootball API",
+    message = "RealityFootball API + MCP",
     auth = "/auth/login",
     status = "/auth/status",
-    games = "/yahoo/games",
+    mcp = "/mcp",
+    yahoo = new
+    {
+        games = "/yahoo/games",
+        leagues = "/yahoo/leagues",
+        teams = "/yahoo/teams",
+        standings = "/yahoo/leagues/{leagueKey}/standings",
+        leagueTeams = "/yahoo/leagues/{leagueKey}/teams",
+        roster = "/yahoo/teams/{teamKey}/roster",
+        freeAgents = "/yahoo/leagues/{leagueKey}/free-agents",
+        scoreboard = "/yahoo/leagues/{leagueKey}/scoreboard",
+    },
 }));
 
 app.MapGet("/auth/login", (HttpContext context, YahooOAuthService oauthService, IOptions<YahooOptions> options) =>
@@ -84,7 +101,7 @@ app.MapGet("/auth/callback", async (
         return Results.Ok(new
         {
             message = "Yahoo authentication succeeded.",
-            next = "/yahoo/games",
+            next = "/yahoo/leagues",
         });
     }
     catch (InvalidOperationException ex)
@@ -115,11 +132,59 @@ app.MapGet("/auth/logout", async (YahooTokenStore tokenStore, CancellationToken 
     return Results.Ok(new { message = "Yahoo tokens cleared." });
 });
 
-app.MapGet("/yahoo/games", async (YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+app.MapGet("/yahoo/games", (YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetCurrentUserGamesJsonAsync(cancellationToken)));
+
+app.MapGet("/yahoo/leagues", (YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetMyLeaguesAsync(cancellationToken)));
+
+app.MapGet("/yahoo/teams", (YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetMyTeamsAsync(cancellationToken)));
+
+app.MapGet("/yahoo/leagues/{leagueKey}", (string leagueKey, YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetLeagueAsync(leagueKey, cancellationToken)));
+
+app.MapGet("/yahoo/leagues/{leagueKey}/standings", (string leagueKey, YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetLeagueStandingsAsync(leagueKey, cancellationToken)));
+
+app.MapGet("/yahoo/leagues/{leagueKey}/teams", (string leagueKey, YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetLeagueTeamsAsync(leagueKey, cancellationToken)));
+
+app.MapGet("/yahoo/leagues/{leagueKey}/free-agents", (
+    string leagueKey,
+    YahooFantasyClient fantasyClient,
+    string? position,
+    int? start,
+    int? count,
+    CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetFreeAgentsAsync(leagueKey, position, start ?? 0, count ?? 25, cancellationToken)));
+
+app.MapGet("/yahoo/leagues/{leagueKey}/scoreboard", (
+    string leagueKey,
+    YahooFantasyClient fantasyClient,
+    int? week,
+    CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetLeagueScoreboardAsync(leagueKey, week, cancellationToken)));
+
+app.MapGet("/yahoo/teams/{teamKey}", (string teamKey, YahooFantasyClient fantasyClient, CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetTeamAsync(teamKey, cancellationToken)));
+
+app.MapGet("/yahoo/teams/{teamKey}/roster", (
+    string teamKey,
+    YahooFantasyClient fantasyClient,
+    int? week,
+    CancellationToken cancellationToken) =>
+    YahooJson(fantasyClient.GetTeamRosterAsync(teamKey, week, cancellationToken)));
+
+app.MapMcp("/mcp");
+
+app.Run();
+
+static async Task<IResult> YahooJson(Task<string> jsonTask)
 {
     try
     {
-        var json = await fantasyClient.GetCurrentUserGamesJsonAsync(cancellationToken);
+        var json = await jsonTask;
         return Results.Content(json, "application/json");
     }
     catch (InvalidOperationException ex) when (ex.Message.Contains("Not authenticated", StringComparison.OrdinalIgnoreCase))
@@ -130,6 +195,8 @@ app.MapGet("/yahoo/games", async (YahooFantasyClient fantasyClient, Cancellation
     {
         return Results.Problem(ex.Message, statusCode: StatusCodes.Status502BadGateway);
     }
-});
-
-app.Run();
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+}
