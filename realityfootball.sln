@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealityFootball.Api", "src\RealityFootball.Api\RealityFootball.Api.csproj", "{E4C89B45-C8E1-FC0F-1BA5-0936F9582437}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E4C89B45-C8E1-FC0F-1BA5-0936F9582437}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4C89B45-C8E1-FC0F-1BA5-0936F9582437}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4C89B45-C8E1-FC0F-1BA5-0936F9582437}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4C89B45-C8E1-FC0F-1BA5-0936F9582437}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E4C89B45-C8E1-FC0F-1BA5-0936F9582437} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2825E110-3BF3-4DB8-8189-351F0DDFEA70}
+	EndGlobalSection
+EndGlobal

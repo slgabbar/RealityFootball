@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Local OAuth token cache
+**/data/yahoo-tokens.json
+
 # User-specific files
 *.rsuser
 *.suo
