@@ -1,0 +1,6 @@
+@RealityFootball.Api_HostAddress = http://localhost:5277
+
+GET {{RealityFootball.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
